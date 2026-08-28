@@ -44,3 +44,44 @@ h1 {
   border: 1px solid #e6e6df;
   border-radius: 0.5rem;
 }
+
+#team {
+  margin-top: 2.5rem;
+  text-align: left;
+}
+
+#team h2 {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a80;
+  font-weight: 600;
+}
+
+.team-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 0.75rem;
+  border-top: 1px solid #e7e7e0;
+}
+
+.team-list li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #e7e7e0;
+}
+
+.team-who {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.team-name { font-weight: 500; }
+.team-role { color: #8a8a80; font-size: 0.9375rem; }
+
+.team-on {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.875rem;
+  color: #8a8a80;
+}
