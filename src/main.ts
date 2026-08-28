@@ -1,9 +1,12 @@
 import { PITCH, PRODUCT_NAME } from "./config";
+import { renderTeam } from "./team";
 import "./style.css";
 
 document.title = PRODUCT_NAME;
 document.querySelector<HTMLHeadingElement>("#name")!.textContent = PRODUCT_NAME;
 document.querySelector<HTMLParagraphElement>("#pitch")!.textContent = PITCH;
+
+renderTeam(document.querySelector<HTMLElement>("#team")!);
 
 // ?demo=1 — seed-data mode (stub).
 // Renders placeholder rows so demos never show an empty screen.
