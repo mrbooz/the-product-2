@@ -46,9 +46,20 @@ function currentUserId(): string {
   } catch {
     // Private mode, or storage refused. An unattributed save still counts as
     // a save; it must not be dropped for the sake of a tidier log.
-    return "anon-unstored";
+    //
+    // ONE ID PER SESSION, not one id for everybody (Nadia, review of TMP-5).
+    // A shared constant would fold every private-mode reader into a single
+    // user, and the north-star number is per-user by definition — it would
+    // report one very enthusiastic person instead of the several there
+    // actually were. Held in a module-level variable so repeat saves in the
+    // same session still attribute to the same person.
+    if (!refusedId) refusedId = `anon-nostore-${Math.random().toString(36).slice(2, 10)}`;
+    return refusedId;
   }
 }
+
+/** The per-session id for a browser that refuses storage. See currentUserId. */
+let refusedId = "";
 
 const saved = document.createElement("section");
 saved.className = "save-demo";
