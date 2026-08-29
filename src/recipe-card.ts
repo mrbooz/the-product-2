@@ -54,7 +54,10 @@ export function renderRecipeCard(mount: HTMLElement, recipe: Recipe): HTMLElemen
 
   const ing = document.createElement("section");
   ing.className = "recipe-ingredients";
-  ing.append(sectionLabel("Ingredients"));
+  // NAMED, so it is a landmark and not a div (Nadia, review of TMP-7). A
+  // <section> with no accessible name is invisible to region navigation, so
+  // the heading that already names it on screen names it to the machine too.
+  ing.append(nameSection(ing, sectionLabel("Ingredients")));
   const ingList = document.createElement("ul");
   for (const line of recipe.ingredients) {
     const li = document.createElement("li");
@@ -65,7 +68,7 @@ export function renderRecipeCard(mount: HTMLElement, recipe: Recipe): HTMLElemen
 
   const method = document.createElement("section");
   method.className = "recipe-method";
-  method.append(sectionLabel("Method"));
+  method.append(nameSection(method, sectionLabel("Method")));
   const steps = document.createElement("ol");
   for (const step of recipe.method) {
     const li = document.createElement("li");
@@ -78,6 +81,17 @@ export function renderRecipeCard(mount: HTMLElement, recipe: Recipe): HTMLElemen
   card.append(head, body);
   mount.append(card);
   return card;
+}
+
+/** Point a section at the heading that names it, and hand the heading back so
+ *  the caller can append it. Ids are per-card and per-section, so two cards on
+ *  one page do not collide. */
+let sectionSeq = 0;
+function nameSection(section: HTMLElement, heading: HTMLElement): HTMLElement {
+  sectionSeq += 1;
+  heading.id = `recipe-section-${sectionSeq}`;
+  section.setAttribute("aria-labelledby", heading.id);
+  return heading;
 }
 
 /** A section label, as a real heading — the whitespace does the hierarchy on

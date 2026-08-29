@@ -112,9 +112,14 @@ h1 {
    falls back through the widely-installed script faces and finally to a
    serif — which still reads as "written", where a sans would read as
    "generated". `overflow-wrap` because a long recipe name must wrap, never
-   truncate. */
+   truncate.
+
+   NO `cursive` KEYWORD IN THE MIDDLE (Nadia, review of TMP-7). A generic
+   family never fails to resolve, so anything after it is unreachable: the
+   list said "…then Georgia, then serif" and could not have reached either.
+   The real serif goes last and is the actual fallback the comment promises. */
 .recipe-title {
-  font-family: "Segoe Script", "Bradley Hand", "Snell Roundhand", cursive, Georgia, serif;
+  font-family: "Segoe Script", "Bradley Hand", "Snell Roundhand", Georgia, serif;
   font-size: 2rem;
   line-height: 1.2;
   letter-spacing: 0;
