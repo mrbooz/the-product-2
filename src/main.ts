@@ -2,6 +2,7 @@ import { PITCH, PRODUCT_NAME } from "./config";
 import { renderTeam } from "./team";
 import { trackRecipeSaved } from "./analytics";
 import { renderRecipeCard } from "./recipe-card";
+import { loadRecipes } from "./recipes";
 import "./style.css";
 
 document.title = PRODUCT_NAME;
@@ -29,9 +30,7 @@ if (new URLSearchParams(location.search).get("demo") === "1") {
  *
  * The skeleton had nothing a person could complete, and an analytics event
  * with no action behind it measures nothing. So the first save lives here:
- * one recipe, one button, one event. It is deliberately the smallest thing
- * that makes the number honest — the real save flow replaces this, and the
- * event name and shape do not change when it does.
+ * one button, one event, against whatever recipe is on screen.
  *
  * The user id is a per-browser id, not an account: there are no accounts yet,
  * and inventing one in the log would be worse than saying "this browser".
@@ -50,10 +49,7 @@ function currentUserId(): string {
     //
     // ONE ID PER SESSION, not one id for everybody (Nadia, review of TMP-5).
     // A shared constant would fold every private-mode reader into a single
-    // user, and the north-star number is per-user by definition — it would
-    // report one very enthusiastic person instead of the several there
-    // actually were. Held in a module-level variable so repeat saves in the
-    // same session still attribute to the same person.
+    // user, and the north-star number is per-user by definition.
     if (!refusedId) refusedId = `anon-nostore-${Math.random().toString(36).slice(2, 10)}`;
     return refusedId;
   }
@@ -62,44 +58,45 @@ function currentUserId(): string {
 /** The per-session id for a browser that refuses storage. See currentUserId. */
 let refusedId = "";
 
-const saved = document.createElement("section");
-saved.className = "save-demo";
-const button = document.createElement("button");
-button.type = "button";
-button.id = "save-recipe";
-button.textContent = "Save this recipe";
-const status = document.createElement("p");
-status.className = "save-status";
-status.id = "save-status";
-button.addEventListener("click", () => {
-  const counted = trackRecipeSaved("recipe-001", currentUserId());
-  // Says which of the two things happened, because "saved" and "saved again"
-  // are the difference the whole ticket is about.
-  status.textContent = counted
-    ? "Saved. That is one recipe kept."
-    : "Already saved this one — counted once, as it should be.";
-});
-saved.append(button, status);
-document.querySelector("main")!.append(saved);
+/* THE SCREEN ASKS FOR ITS CONTENT NOW (TMP-8).
+ *
+ * The card used to hold a recipe in its own call site, which meant the AC —
+ * "nothing on the screen is hardcoded that shouldn't be" — was false by
+ * construction. It reads the tin instead, and the save button saves the
+ * recipe that is actually on screen, by its own id.
+ *
+ * THE PLACEHOLDER ID IS GONE, and that closes the hole Nadia and Ben both
+ * flagged on TMP-5: every save was `recipe-001`, so the once-per-completion
+ * dedupe collapsed every recipe in a session into one event. The number was
+ * unfalsifiable, which is worse than noisy. It now dedupes on the thing it
+ * was always meant to.
+ */
+const main = document.querySelector<HTMLElement>("main")!;
+const recipes = loadRecipes();
+const showing = recipes[0];
 
-/* One card on the screen, so the layout can be judged against the redlines.
- * The content is a placeholder standing in for TMP-8's real data — it is
- * deliberately a LONG one, because a short recipe makes any layout look
- * fine and the long case is the one theo and I both flagged. */
-renderRecipeCard(document.querySelector<HTMLElement>("main")!, {
-  title: "Ana's Sunday tomato sauce",
-  from: "Ana",
-  ingredients: [
-    "2 tins whole plum tomatoes",
-    "1 onion, halved, skin on",
-    "5 tbsp butter",
-    "salt, more than you think",
-    "a basil stalk, if there is one",
-  ],
-  method: [
-    "Tip the tomatoes into a heavy pan and crush them with your hand. Do not use a blender; the sauce should not be smooth, and Ana would have said so.",
-    "Add the onion halves cut side down, the butter, and a serious pinch of salt. Bring it to a bare simmer.",
-    "Leave it for 45 minutes, uncovered, stirring only when you remember. It will look wrong at 20 minutes and right at 40.",
-    "Take the onion out. Taste it. It will need more salt than you want to add, and then it will need a little more than that.",
-  ],
-});
+if (showing) {
+  renderRecipeCard(main, showing);
+
+  const saved = document.createElement("section");
+  saved.className = "save-demo";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.id = "save-recipe";
+  button.textContent = "Save this recipe";
+  const status = document.createElement("p");
+  status.className = "save-status";
+  status.id = "save-status";
+  button.addEventListener("click", () => {
+    const counted = trackRecipeSaved(showing.id, currentUserId());
+    // Says which of the two things happened, because "saved" and "saved
+    // again" are the difference the whole ticket is about.
+    status.textContent = counted
+      ? "Saved. That is one recipe kept."
+      : "Already saved this one — counted once, as it should be.";
+  });
+  saved.append(button, status);
+  main.append(saved);
+}
+// The no-recipes screen is TMP-9's. Rendering a guess at it here would be
+// the third state nobody specced, built twice.
