@@ -1,6 +1,7 @@
 import { PITCH, PRODUCT_NAME } from "./config";
 import { renderTeam } from "./team";
 import { trackRecipeSaved } from "./analytics";
+import { renderRecipeCard } from "./recipe-card";
 import "./style.css";
 
 document.title = PRODUCT_NAME;
@@ -80,3 +81,25 @@ button.addEventListener("click", () => {
 });
 saved.append(button, status);
 document.querySelector("main")!.append(saved);
+
+/* One card on the screen, so the layout can be judged against the redlines.
+ * The content is a placeholder standing in for TMP-8's real data — it is
+ * deliberately a LONG one, because a short recipe makes any layout look
+ * fine and the long case is the one theo and I both flagged. */
+renderRecipeCard(document.querySelector<HTMLElement>("main")!, {
+  title: "Ana's Sunday tomato sauce",
+  from: "Ana",
+  ingredients: [
+    "2 tins whole plum tomatoes",
+    "1 onion, halved, skin on",
+    "5 tbsp butter",
+    "salt, more than you think",
+    "a basil stalk, if there is one",
+  ],
+  method: [
+    "Tip the tomatoes into a heavy pan and crush them with your hand. Do not use a blender; the sauce should not be smooth, and Ana would have said so.",
+    "Add the onion halves cut side down, the butter, and a serious pinch of salt. Bring it to a bare simmer.",
+    "Leave it for 45 minutes, uncovered, stirring only when you remember. It will look wrong at 20 minutes and right at 40.",
+    "Take the onion out. Taste it. It will need more salt than you want to add, and then it will need a little more than that.",
+  ],
+});

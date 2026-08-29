@@ -85,3 +85,93 @@ h1 {
   font-size: 0.875rem;
   color: #8a8a80;
 }
+
+/* ── THE HANDWRITTEN RECIPE CARD (TMP-7) ──────────────────────────────────
+   theo's spec v1: 8pt grid, one accent, whitespace does the hierarchy.
+   Every spacing value here is a multiple of 0.5rem.
+
+   ONE ACCENT, and it is the rule under the title. Nothing else on the card
+   is allowed colour — the spec's "one accent" is a budget, not a palette. */
+.recipe-card {
+  --accent: #7a5c3e;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  text-align: left;
+  background: #fffdf8;
+  border: 1px solid #e6e1d5;
+  border-radius: 0.5rem;
+}
+
+.recipe-head {
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* THE HANDWRITING. Load-bearing per the handoff: it is the thing that says a
+   person wrote this. Cursive faces are not on every machine, so the stack
+   falls back through the widely-installed script faces and finally to a
+   serif — which still reads as "written", where a sans would read as
+   "generated". `overflow-wrap` because a long recipe name must wrap, never
+   truncate.
+
+   NO `cursive` KEYWORD IN THE MIDDLE (Nadia, review of TMP-7). A generic
+   family never fails to resolve, so anything after it is unreachable: the
+   list said "…then Georgia, then serif" and could not have reached either.
+   The real serif goes last and is the actual fallback the comment promises. */
+.recipe-title {
+  font-family: "Segoe Script", "Bradley Hand", "Snell Roundhand", Georgia, serif;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.recipe-from {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #55554f;
+}
+
+.recipe-body {
+  display: grid;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.recipe-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #55554f;
+}
+
+.recipe-ingredients ul,
+.recipe-method ol {
+  margin-top: 1rem;
+  padding-left: 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.recipe-ingredients ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* The method holds its measure however long the recipe runs — forty lines of
+   method is the normal case, and a full-width paragraph is unreadable long
+   before that. */
+.recipe-method li {
+  max-width: 34rem;
+  line-height: 1.6;
+}
+
+/* Two columns once there is room for both to keep their measure. Below this
+   the single column IS the mobile pass — nothing is hidden, nothing reflows
+   into something else. */
+@media (min-width: 44rem) {
+  .recipe-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+}
