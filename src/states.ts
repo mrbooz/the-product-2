@@ -118,9 +118,15 @@ export const UNRECOGNISED: StateCopy = {
     "There is something in the tin and this version of Recipe Tin cannot " +
     "read it. Nothing has been deleted. Opening the app somewhere it worked " +
     "before will still show them.",
-  action: { label: "Start a new tin instead", onPress: () => {
-    window.location.hash = "#/add";
-  } },
+  /* NO BUTTON ON THIS SCREEN MAY TOUCH THE TIN (Nadia, review of TMP-9). The
+   * first cut offered "Start a new tin instead" pointing at #/add — and if the
+   * add flow writes to the same key, that button is the one thing here that
+   * CAN delete what the sentence above it just promised is safe. The way out
+   * is a reload, which is harmless and occasionally works (a different tab
+   * upgraded the format, an extension stopped interfering). The add flow will
+   * still have to learn not to clobber an unrecognised tin; this screen no
+   * longer invites it to. */
+  action: { label: "Try opening it again", onPress: () => window.location.reload() },
 };
 
 function skeleton(cls: string): HTMLElement {
