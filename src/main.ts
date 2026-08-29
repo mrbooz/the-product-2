@@ -3,6 +3,7 @@ import { renderTeam } from "./team";
 import { trackRecipeSaved } from "./analytics";
 import { renderRecipeCard } from "./recipe-card";
 import { loadRecipes } from "./recipes";
+import { renderState } from "./states";
 import "./style.css";
 
 document.title = PRODUCT_NAME;
@@ -58,24 +59,34 @@ function currentUserId(): string {
 /** The per-session id for a browser that refuses storage. See currentUserId. */
 let refusedId = "";
 
-/* THE SCREEN ASKS FOR ITS CONTENT NOW (TMP-8).
+/* THE SCREEN ASKS FOR ITS CONTENT NOW (TMP-8), AND SHOWS THE WAIT (TMP-9).
  *
- * The card used to hold a recipe in its own call site, which meant the AC —
- * "nothing on the screen is hardcoded that shouldn't be" — was false by
- * construction. It reads the tin instead, and the save button saves the
- * recipe that is actually on screen, by its own id.
- *
- * THE PLACEHOLDER ID IS GONE, and that closes the hole Nadia and Ben both
- * flagged on TMP-5: every save was `recipe-001`, so the once-per-completion
- * dedupe collapsed every recipe in a session into one event. The number was
- * unfalsifiable, which is worse than noisy. It now dedupes on the thing it
- * was always meant to.
+ * THE SKELETON IS ON THE REAL PATH (Nadia, review of TMP-9). The first cut
+ * defined the loading state and never rendered it, so the whole skeleton path
+ * was dead code waiting for somebody to wire it — a state that exists in the
+ * spec, in the CSS and in a function nobody calls is a state we have not
+ * built. It renders first now and is replaced when the read answers. The read
+ * is fast today and that is fine: the point is that the path is live, so the
+ * day the tin comes from a network the screen already knows what to do.
  */
 const main = document.querySelector<HTMLElement>("main")!;
-const recipes = loadRecipes();
-const showing = recipes[0];
+const loading = renderState(main, "loading");
 
-if (showing) {
+/** Swap the skeleton for whatever the tin actually gave us. */
+function settle(): void {
+  const tin = loadRecipes();
+  loading.remove();
+
+  if (!tin.ok) {
+    renderState(main, tin.reason === "unreadable" ? "error" : "unrecognised");
+    return;
+  }
+  const showing = tin.recipes[0];
+  if (!showing) {
+    renderState(main, "empty");
+    return;
+  }
+
   renderRecipeCard(main, showing);
 
   const saved = document.createElement("section");
@@ -98,5 +109,7 @@ if (showing) {
   saved.append(button, status);
   main.append(saved);
 }
-// The no-recipes screen is TMP-9's. Rendering a guess at it here would be
-// the third state nobody specced, built twice.
+
+// A frame, not a timer: enough for the skeleton to paint, and no invented
+// delay pretending the read is slower than it is.
+requestAnimationFrame(settle);

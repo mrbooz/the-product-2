@@ -40,28 +40,56 @@ const SEED: StoredRecipe = {
   ],
 };
 
+/** What came back, and — when nothing did — why.
+ *
+ * THE TIN SAYS WHY IT IS EMPTY (Nadia, review of TMP-9). The first cut
+ * returned a bare array and left main.ts to re-probe storage and guess. That
+ * guess assumed a read failure was the only way the tin can break, so a value
+ * that parsed but was the wrong shape — a future version's format — would
+ * have been reported to the reader as "the tin is empty" about recipes they
+ * know they saved. The reason belongs to the function that knows it. */
+export type TinResult =
+  | { ok: true; recipes: StoredRecipe[] }
+  | { ok: false; reason: "unreadable" | "unrecognised" };
+
 /**
  * Every recipe in the tin, oldest first.
  *
- * A STORAGE FAILURE IS AN EMPTY TIN, NEVER A CRASH. Private mode, a quota,
- * a corrupted value written by an older build — all of them mean "nothing to
- * show", which is a screen TMP-9 is designing anyway. Throwing here would
- * take the whole page down over a recipe nobody could read.
+ * A STORAGE FAILURE IS NEVER A CRASH. Private mode, a quota, a value written
+ * by an older or newer build — all of them are screens TMP-9 designed.
+ * Throwing here would take the whole page down over a recipe nobody could
+ * read.
  */
-export function loadRecipes(): StoredRecipe[] {
+export function loadRecipes(): TinResult {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) {
-      localStorage.setItem(KEY, JSON.stringify([SEED]));
-      return [SEED];
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isRecipe);
+    raw = localStorage.getItem(KEY);
   } catch {
-    // Not seeded either: a browser that cannot read cannot be trusted to
-    // write, and a seed that vanishes on reload is worse than no seed.
-    return [];
+    return { ok: false, reason: "unreadable" };
+  }
+  if (!raw) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify([SEED]));
+    } catch {
+      // Readable but not writable — a real quota case. The seed still shows;
+      // it just will not be there next time, and that is honest.
+    }
+    return { ok: true, recipes: [SEED] };
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return { ok: false, reason: "unrecognised" };
+    // A SHAPE WE DO NOT RECOGNISE IS NOT AN EMPTY TIN. If something is stored
+    // and none of it survives the shape check, the format moved under us —
+    // seeding or showing "empty" over it would be the product telling a
+    // stranger their recipes never existed.
+    const recipes = parsed.filter(isRecipe);
+    if (parsed.length > 0 && recipes.length === 0) {
+      return { ok: false, reason: "unrecognised" };
+    }
+    return { ok: true, recipes };
+  } catch {
+    return { ok: false, reason: "unrecognised" };
   }
 }
 
