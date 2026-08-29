@@ -10,7 +10,7 @@
 // whole ticket.
 
 /** What the screen is doing, from the reader's point of view. */
-export type ScreenState = "loading" | "empty" | "error";
+export type ScreenState = "loading" | "empty" | "error" | "unrecognised";
 
 export interface StateCopy {
   title: string;
@@ -39,8 +39,9 @@ export function renderState(
   box.className = `screen-state screen-state--${state}`;
   // Announced, not just drawn. A state change nobody is told about is a
   // state change that did not happen for a screen-reader user.
-  box.setAttribute("role", state === "error" ? "alert" : "status");
-  box.setAttribute("aria-live", state === "error" ? "assertive" : "polite");
+  const urgent = state === "error" || state === "unrecognised";
+  box.setAttribute("role", urgent ? "alert" : "status");
+  box.setAttribute("aria-live", urgent ? "assertive" : "polite");
 
   if (state === "loading") {
     box.append(skeleton("skeleton-title"), skeleton("skeleton-line"), skeleton("skeleton-line"));
@@ -53,7 +54,8 @@ export function renderState(
     return box;
   }
 
-  const resolved = state === "empty" ? EMPTY : ERROR;
+  const resolved =
+    state === "empty" ? EMPTY : state === "unrecognised" ? UNRECOGNISED : ERROR;
   const h = document.createElement("h2");
   h.className = "state-title";
   h.textContent = copy?.title ?? resolved.title;
@@ -80,12 +82,17 @@ const EMPTY: StateCopy = {
   body:
     "The first recipe in here is usually somebody else's — the one you have " +
     "asked for twice and still cook wrong. Start with that one.",
+  /* ROUTES, LIKE THE OTHER ONE DOES (Nadia, review of TMP-9). The first cut
+   * popped an alert here while the error state did a real reload, so the two
+   * ways out of this screen were different KINDS of thing — one a navigation,
+   * one a dialog apologising for the absence of a navigation. This goes to
+   * the route the add flow will own. What lives there today is a page that
+   * says so in the product's own voice, which is the honest version of "not
+   * yet" and stays true the day the flow lands. */
   action: {
     label: "Add the first recipe",
     onPress: () => {
-      // The add flow does not exist yet. Saying so is the honest way out of
-      // this screen; a dead button would be the dead end theo pinned.
-      window.alert("Adding recipes lands next sprint. The tin is ready for it.");
+      window.location.hash = "#/add";
     },
   },
 };
@@ -99,6 +106,21 @@ const ERROR: StateCopy = {
     "Something went wrong reading your recipes. They are not lost — this " +
     "browser just could not get to them this time.",
   action: { label: "Try again", onPress: () => window.location.reload() },
+};
+
+/* THE TIN IS THERE AND WE CANNOT READ IT — a third failure, and not the same
+ * sentence as the second. "Try again" is the wrong offer when a reload will
+ * reproduce it exactly; the honest move is to say the recipes are still there
+ * and not to touch them. */
+export const UNRECOGNISED: StateCopy = {
+  title: "These recipes are from a different version.",
+  body:
+    "There is something in the tin and this version of Recipe Tin cannot " +
+    "read it. Nothing has been deleted. Opening the app somewhere it worked " +
+    "before will still show them.",
+  action: { label: "Start a new tin instead", onPress: () => {
+    window.location.hash = "#/add";
+  } },
 };
 
 function skeleton(cls: string): HTMLElement {

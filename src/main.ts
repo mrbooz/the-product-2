@@ -59,24 +59,34 @@ function currentUserId(): string {
 /** The per-session id for a browser that refuses storage. See currentUserId. */
 let refusedId = "";
 
-/* THE SCREEN ASKS FOR ITS CONTENT NOW (TMP-8).
+/* THE SCREEN ASKS FOR ITS CONTENT NOW (TMP-8), AND SHOWS THE WAIT (TMP-9).
  *
- * The card used to hold a recipe in its own call site, which meant the AC —
- * "nothing on the screen is hardcoded that shouldn't be" — was false by
- * construction. It reads the tin instead, and the save button saves the
- * recipe that is actually on screen, by its own id.
- *
- * THE PLACEHOLDER ID IS GONE, and that closes the hole Nadia and Ben both
- * flagged on TMP-5: every save was `recipe-001`, so the once-per-completion
- * dedupe collapsed every recipe in a session into one event. The number was
- * unfalsifiable, which is worse than noisy. It now dedupes on the thing it
- * was always meant to.
+ * THE SKELETON IS ON THE REAL PATH (Nadia, review of TMP-9). The first cut
+ * defined the loading state and never rendered it, so the whole skeleton path
+ * was dead code waiting for somebody to wire it — a state that exists in the
+ * spec, in the CSS and in a function nobody calls is a state we have not
+ * built. It renders first now and is replaced when the read answers. The read
+ * is fast today and that is fine: the point is that the path is live, so the
+ * day the tin comes from a network the screen already knows what to do.
  */
 const main = document.querySelector<HTMLElement>("main")!;
-const recipes = loadRecipes();
-const showing = recipes[0];
+const loading = renderState(main, "loading");
 
-if (showing) {
+/** Swap the skeleton for whatever the tin actually gave us. */
+function settle(): void {
+  const tin = loadRecipes();
+  loading.remove();
+
+  if (!tin.ok) {
+    renderState(main, tin.reason === "unreadable" ? "error" : "unrecognised");
+    return;
+  }
+  const showing = tin.recipes[0];
+  if (!showing) {
+    renderState(main, "empty");
+    return;
+  }
+
   renderRecipeCard(main, showing);
 
   const saved = document.createElement("section");
@@ -98,23 +108,8 @@ if (showing) {
   });
   saved.append(button, status);
   main.append(saved);
-} else {
-  /* THE EMPTY TIN (TMP-9). `loadRecipes` returns nothing for two different
-   * reasons — a tin that is genuinely empty, and a tin this browser cannot
-   * read — and the reader deserves to be told which. `readable` is the
-   * distinction; without it, a storage failure would show a stranger "the
-   * tin is empty" about recipes they know they saved, which is the one lie
-   * the error state exists to prevent. */
-  renderState(main, storageReadable() ? "empty" : "error");
 }
 
-/** Can this browser read the tin at all? Cheap, and the only honest way to
- *  tell an empty tin from an unreadable one. */
-function storageReadable(): boolean {
-  try {
-    localStorage.getItem("recipe-tin:probe");
-    return true;
-  } catch {
-    return false;
-  }
-}
+// A frame, not a timer: enough for the skeleton to paint, and no invented
+// delay pretending the read is slower than it is.
+requestAnimationFrame(settle);
