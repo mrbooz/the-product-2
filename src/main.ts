@@ -3,6 +3,7 @@ import { renderTeam } from "./team";
 import { trackRecipeSaved } from "./analytics";
 import { renderRecipeCard } from "./recipe-card";
 import { loadRecipes } from "./recipes";
+import { renderState } from "./states";
 import "./style.css";
 
 document.title = PRODUCT_NAME;
@@ -97,6 +98,23 @@ if (showing) {
   });
   saved.append(button, status);
   main.append(saved);
+} else {
+  /* THE EMPTY TIN (TMP-9). `loadRecipes` returns nothing for two different
+   * reasons — a tin that is genuinely empty, and a tin this browser cannot
+   * read — and the reader deserves to be told which. `readable` is the
+   * distinction; without it, a storage failure would show a stranger "the
+   * tin is empty" about recipes they know they saved, which is the one lie
+   * the error state exists to prevent. */
+  renderState(main, storageReadable() ? "empty" : "error");
 }
-// The no-recipes screen is TMP-9's. Rendering a guess at it here would be
-// the third state nobody specced, built twice.
+
+/** Can this browser read the tin at all? Cheap, and the only honest way to
+ *  tell an empty tin from an unreadable one. */
+function storageReadable(): boolean {
+  try {
+    localStorage.getItem("recipe-tin:probe");
+    return true;
+  } catch {
+    return false;
+  }
+}
